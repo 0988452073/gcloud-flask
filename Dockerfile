@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 設定環境變數（Cloud Run 需要監聽 0.0.0.0:8080）
-ENV FLASK_APP=main.py
+ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8080
 ENV PYTHONUNBUFFERED=1
@@ -21,4 +21,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
 
 # 啟動 Flask（使用 Gunicorn 作為 WSGI Server）
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "main:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]
