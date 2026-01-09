@@ -41,11 +41,7 @@ def open_serial_connection(port, baudrate=9600, timeout=1):
     Raises:
         serial.SerialException: If unable to open the port
     """
-    try:
-        ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
-        return ser
-    except serial.SerialException:
-        raise
+    return serial.Serial(port, baudrate=baudrate, timeout=timeout)
 
 
 def write_to_serial(ser, data):

@@ -1,10 +1,13 @@
 from flask import Flask, jsonify, request
+from threading import Lock
+import serial
 import serial_comm
 
 app = Flask(__name__)
 
-# Store active serial connections
+# Store active serial connections with thread-safe access
 active_connections = {}
+connections_lock = Lock()
 
 @app.route("/")
 def home():
@@ -20,7 +23,7 @@ def get_serial_ports():
             "ports": ports,
             "count": len(ports)
         }), 200
-    except Exception as e:
+    except (serial.SerialException, OSError) as e:
         return jsonify({
             "status": "error",
             "message": str(e)
@@ -42,14 +45,15 @@ def open_serial_port():
     timeout = data.get("timeout", 1)
     
     try:
-        if port in active_connections:
-            return jsonify({
-                "status": "error",
-                "message": f"Port {port} is already open"
-            }), 400
-        
-        ser = serial_comm.open_serial_connection(port, baudrate, timeout)
-        active_connections[port] = ser
+        with connections_lock:
+            if port in active_connections:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Port {port} is already open"
+                }), 400
+            
+            ser = serial_comm.open_serial_connection(port, baudrate, timeout)
+            active_connections[port] = ser
         
         return jsonify({
             "status": "success",
@@ -57,7 +61,7 @@ def open_serial_port():
             "port": port,
             "baudrate": baudrate
         }), 200
-    except Exception as e:
+    except serial.SerialException as e:
         return jsonify({
             "status": "error",
             "message": str(e)
@@ -78,13 +82,15 @@ def write_serial():
     write_data = data["data"]
     
     try:
-        if port not in active_connections:
-            return jsonify({
-                "status": "error",
-                "message": f"Port {port} is not open. Please open it first."
-            }), 400
+        with connections_lock:
+            if port not in active_connections:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Port {port} is not open. Please open it first."
+                }), 400
+            
+            ser = active_connections[port]
         
-        ser = active_connections[port]
         bytes_written = serial_comm.write_to_serial(ser, write_data)
         
         return jsonify({
@@ -92,7 +98,7 @@ def write_serial():
             "message": "Data written successfully",
             "bytes_written": bytes_written
         }), 200
-    except Exception as e:
+    except serial.SerialException as e:
         return jsonify({
             "status": "error",
             "message": str(e)
@@ -113,13 +119,15 @@ def read_serial():
     size = data.get("size", 1024)
     
     try:
-        if port not in active_connections:
-            return jsonify({
-                "status": "error",
-                "message": f"Port {port} is not open. Please open it first."
-            }), 400
+        with connections_lock:
+            if port not in active_connections:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Port {port} is not open. Please open it first."
+                }), 400
+            
+            ser = active_connections[port]
         
-        ser = active_connections[port]
         read_data, bytes_read = serial_comm.read_from_serial(ser, size)
         
         return jsonify({
@@ -127,7 +135,7 @@ def read_serial():
             "data": read_data,
             "bytes_read": bytes_read
         }), 200
-    except Exception as e:
+    except serial.SerialException as e:
         return jsonify({
             "status": "error",
             "message": str(e)
@@ -147,21 +155,22 @@ def close_serial_port():
     port = data["port"]
     
     try:
-        if port not in active_connections:
-            return jsonify({
-                "status": "error",
-                "message": f"Port {port} is not open"
-            }), 400
-        
-        ser = active_connections[port]
-        serial_comm.close_serial_connection(ser)
-        del active_connections[port]
+        with connections_lock:
+            if port not in active_connections:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Port {port} is not open"
+                }), 400
+            
+            ser = active_connections[port]
+            serial_comm.close_serial_connection(ser)
+            del active_connections[port]
         
         return jsonify({
             "status": "success",
             "message": f"Serial port {port} closed successfully"
         }), 200
-    except Exception as e:
+    except serial.SerialException as e:
         return jsonify({
             "status": "error",
             "message": str(e)
