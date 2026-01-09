@@ -23,7 +23,7 @@ def get_serial_ports():
             "ports": ports,
             "count": len(ports)
         }), 200
-    except (serial.SerialException, OSError) as e:
+    except OSError as e:
         return jsonify({
             "status": "error",
             "message": str(e)
@@ -90,8 +90,7 @@ def write_serial():
                 }), 400
             
             ser = active_connections[port]
-        
-        bytes_written = serial_comm.write_to_serial(ser, write_data)
+            bytes_written = serial_comm.write_to_serial(ser, write_data)
         
         return jsonify({
             "status": "success",
@@ -127,8 +126,7 @@ def read_serial():
                 }), 400
             
             ser = active_connections[port]
-        
-        read_data, bytes_read = serial_comm.read_from_serial(ser, size)
+            read_data, bytes_read = serial_comm.read_from_serial(ser, size)
         
         return jsonify({
             "status": "success",
