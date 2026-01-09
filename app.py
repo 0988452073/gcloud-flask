@@ -120,12 +120,12 @@ def read_serial():
             }), 400
         
         ser = active_connections[port]
-        read_data = serial_comm.read_from_serial(ser, size)
+        read_data, bytes_read = serial_comm.read_from_serial(ser, size)
         
         return jsonify({
             "status": "success",
             "data": read_data,
-            "bytes_read": len(read_data)
+            "bytes_read": bytes_read
         }), 200
     except Exception as e:
         return jsonify({

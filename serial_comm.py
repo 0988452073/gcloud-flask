@@ -44,8 +44,8 @@ def open_serial_connection(port, baudrate=9600, timeout=1):
     try:
         ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
         return ser
-    except serial.SerialException as e:
-        raise Exception(f"Failed to open serial port {port}: {str(e)}")
+    except serial.SerialException:
+        raise
 
 
 def write_to_serial(ser, data):
@@ -60,16 +60,13 @@ def write_to_serial(ser, data):
         int: Number of bytes written
     
     Raises:
-        Exception: If write operation fails
+        serial.SerialException: If write operation fails
     """
-    try:
-        if isinstance(data, str):
-            data = data.encode('utf-8')
-        bytes_written = ser.write(data)
-        ser.flush()
-        return bytes_written
-    except Exception as e:
-        raise Exception(f"Failed to write to serial port: {str(e)}")
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    bytes_written = ser.write(data)
+    ser.flush()
+    return bytes_written
 
 
 def read_from_serial(ser, size=1024):
@@ -81,16 +78,15 @@ def read_from_serial(ser, size=1024):
         size (int): Maximum number of bytes to read (default: 1024)
     
     Returns:
-        str: Data read from the serial port (decoded as UTF-8)
+        tuple: (decoded_str, bytes_read) - Data read as UTF-8 string and actual bytes read
     
     Raises:
-        Exception: If read operation fails
+        serial.SerialException: If read operation fails
     """
-    try:
-        data = ser.read(size)
-        return data.decode('utf-8', errors='ignore')
-    except Exception as e:
-        raise Exception(f"Failed to read from serial port: {str(e)}")
+    data = ser.read(size)
+    bytes_read = len(data)
+    decoded_str = data.decode('utf-8', errors='ignore')
+    return decoded_str, bytes_read
 
 
 def close_serial_connection(ser):
