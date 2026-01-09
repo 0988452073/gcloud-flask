@@ -16,14 +16,7 @@ def list_serial_ports():
         list: List of dictionaries containing port information (device, description, hwid)
     """
     ports = serial.tools.list_ports.comports()
-    port_list = []
-    for port in ports:
-        port_list.append({
-            'device': port.device,
-            'description': port.description,
-            'hwid': port.hwid
-        })
-    return port_list
+    return [{'device': port.device, 'description': port.description, 'hwid': port.hwid} for port in ports]
 
 
 def open_serial_connection(port, baudrate=9600, timeout=1):

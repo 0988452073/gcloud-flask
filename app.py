@@ -23,7 +23,7 @@ def get_serial_ports():
             "ports": ports,
             "count": len(ports)
         }), 200
-    except OSError as e:
+    except Exception as e:
         return jsonify({
             "status": "error",
             "message": str(e)
